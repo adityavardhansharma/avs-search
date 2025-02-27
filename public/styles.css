@@ -1,0 +1,114 @@
+/* public/styles.css */
+
+/* Global Styles */
+body {
+    background-color: #000;
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Grid Background */
+.grid-background {
+    background-image: radial-gradient(rgba(30,144,255,0.15) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* Gradient Border Effect for search bar container */
+.gradient-border {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.gradient-border::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    z-index: -1;
+    border-radius: 8px;
+    background: linear-gradient(45deg, #0047AB, #1E90FF, #00BFFF, #1E90FF, #0047AB);
+    background-size: 300% 300%;
+    animation: gradientMove 10s ease infinite;
+    filter: blur(1px);
+    opacity: 0.9;
+}
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Metallic Text Effect */
+.metallic-text {
+    background: linear-gradient(to right, #83a4d4, #fff, #b6fbff, #fff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-size: 200% auto;
+    animation: shine 3s linear infinite;
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(135,206,250,0.4);
+}
+@keyframes shine {
+    to { background-position: 200% center; }
+}
+
+/* Input Placeholder */
+input::placeholder {
+    color: rgba(176,224,255,0.6);
+}
+
+/* Suggestions Dropdown */
+#suggestions {
+    position: absolute;
+    top: 105%; /* Directly under the search bar */
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.95);
+    border: 1px solid rgba(0, 71, 171, 0.5);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3), 0 0 10px rgba(30,144,255,0.2);
+    z-index: 10;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Each suggestion */
+.suggestion {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #ffffff; /* Changed from #A3B18A to white */
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+    border-bottom: 2px solid rgba(30,144,255,0.3); /* Made border thicker and more visible */
+    text-align: left;
+}
+
+.suggestion:last-child {
+    border-bottom: none;
+}
+
+.suggestion:hover,
+.suggestion.active {
+    background-color: rgba(30,58,138,0.8);
+    color: #fff;
+}
+
+/* Scrollbar styling */
+#suggestions::-webkit-scrollbar {
+    width: 6px;
+}
+
+#suggestions::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+#suggestions::-webkit-scrollbar-thumb {
+    background: rgba(30,144,255,0.5);
+    border-radius: 3px;
+}
+
+#suggestions::-webkit-scrollbar-thumb:hover {
+    background: rgba(30,144,255,0.7);
+}
