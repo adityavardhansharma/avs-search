@@ -145,9 +145,27 @@ function updateActiveSuggestion() {
     });
 }
 
-// Perform search
+// Perform search or open URL directly
 function performSearch(query) {
-    if (query) {
+    if (!query) return;
+
+    // Better URL detection pattern - works with all TLDs
+    // This improved pattern doesn't restrict TLD length and works with multi-part TLDs
+    const isURLLike = query.includes('.');
+
+    // Check for domain pattern more thoroughly
+    const domainPattern = /^(www\.)?[a-zA-Z0-9][-a-zA-Z0-9@:%._+~#=]{0,256}\.[a-zA-Z0-9()]{1,}(\.[a-zA-Z0-9()]{1,})*$/i;
+
+    if (isURLLike && domainPattern.test(query)) {
+        // If it's a URL, open it directly
+        // Add https:// if not already present
+        const url = query.startsWith('http://') || query.startsWith('https://')
+            ? query
+            : 'https://' + query;
+
+        window.location.href = url;
+    } else {
+        // If not a URL, proceed with regular search
         window.location.href = `https://unduck.link?q=${encodeURIComponent(query)}`;
     }
 }
