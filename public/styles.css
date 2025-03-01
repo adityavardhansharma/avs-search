@@ -1,18 +1,14 @@
-/* public/styles.css */
-
 /* Global Styles */
 body {
-    background-color: #000;
+    background-color: black;
     font-family: 'Space Grotesk', sans-serif;
 }
-
-/* Grid Background */
 .grid-background {
     background-image: radial-gradient(rgba(30,144,255,0.15) 1px, transparent 1px);
     background-size: 40px 40px;
 }
 
-/* Gradient Border Effect for search bar container */
+/* Gradient Border Effect */
 .gradient-border {
     position: relative;
     border-radius: 6px;
@@ -27,7 +23,7 @@ body {
     bottom: -3px;
     z-index: -1;
     border-radius: 8px;
-    background: linear-gradient(45deg, #0047AB, #1E90FF, #00BFFF, #1E90FF, #0047AB);
+    background: linear-gradient(45deg, #0047ab, #1e90ff, #00bfff, #1e90ff, #0047ab);
     background-size: 300% 300%;
     animation: gradientMove 10s ease infinite;
     filter: blur(1px);
@@ -62,53 +58,171 @@ input::placeholder {
 /* Suggestions Dropdown */
 #suggestions {
     position: absolute;
-    top: 105%; /* Directly under the search bar */
+    top: 105%;
     left: 0;
     width: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
-    border: 1px solid rgba(0, 71, 171, 0.5);
+    background-color: rgba(0,0,0,0.95);
+    border: 1px solid rgba(0,71,171,0.5);
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3), 0 0 10px rgba(30,144,255,0.2);
     z-index: 10;
     max-height: 300px;
     overflow-y: auto;
 }
-
-/* Each suggestion */
 .suggestion {
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    color: #ffffff; /* Changed from #A3B18A to white */
+    color: #fff;
     cursor: pointer;
-    transition: background-color 0.15s, color 0.15s;
-    border-bottom: 2px solid rgba(30,144,255,0.3); /* Made border thicker and more visible */
+    transition: background-color 0.15s ease;
+    border-bottom: 2px solid rgba(30,144,255,0.3);
     text-align: left;
 }
-
 .suggestion:last-child {
     border-bottom: none;
 }
-
 .suggestion:hover,
 .suggestion.active {
     background-color: rgba(30,58,138,0.8);
     color: #fff;
 }
 
-/* Scrollbar styling */
-#suggestions::-webkit-scrollbar {
-    width: 6px;
+/* --- Engine Selector Styles --- */
+/* Container for the entire engine selector */
+.engine-selector-container {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    z-index: 30;
 }
 
-#suggestions::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+/* Main button (always visible) */
+.engine-selector-main {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(59,130,246,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    z-index: 31;
+    transition: box-shadow 0.3s ease;
 }
 
-#suggestions::-webkit-scrollbar-thumb {
-    background: rgba(30,144,255,0.5);
-    border-radius: 3px;
+.engine-selector-main:hover {
+    box-shadow: 0 0 10px rgba(59,130,246,0.5);
 }
 
-#suggestions::-webkit-scrollbar-thumb:hover {
-    background: rgba(30,144,255,0.7);
+/* Engine options container */
+.engine-options {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 40px;
+    background: rgba(13,25,45,0.95);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    padding-left: 40px; /* Space for the main button */
+    padding-right: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    opacity: 0;
+    visibility: hidden;
+    transform: scaleX(0.3);
+    transform-origin: left;
+    transition: all 0.3s ease;
+    z-index: 29;
+    border: 1px solid rgba(59,130,246,0.3);
+    width: 320px; /* Fixed width to accommodate all icons */
+}
+
+/* When expanded, show the options */
+.engine-selector-container.expanded .engine-options {
+    opacity: 1;
+    visibility: visible;
+    transform: scaleX(1);
+}
+
+/* Individual engine option buttons */
+.engine-option {
+    width: 36px;
+    height: 36px;
+    margin: 0 5px;
+    border-radius: 50%;
+    background: rgba(13,25,45,0.8);
+    border: 1px solid rgba(59,130,246,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.engine-option:hover {
+    transform: translateY(-3px);
+    background: rgba(30,64,175,0.7);
+    border-color: rgba(59,130,246,0.8);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+/* SVG icons styling */
+.engine-option svg,
+.engine-selector-main svg {
+    width: 20px;
+    height: 20px;
+    color: #60a5fa;
+    transition: color 0.2s ease;
+    fill: currentColor;
+}
+
+.engine-option:hover svg,
+.engine-selector-main:hover svg {
+    color: #ffffff;
+}
+
+/* Adjust search input when engine selector is expanded */
+#search-input {
+    transition: padding-left 0.3s ease;
+}
+
+.engine-selector-container.expanded ~ #search-input {
+    padding-left: 280px; /* Adjust based on the expanded width */
+}
+
+/* Ensure the search input text is visible during transition */
+#search-input::placeholder {
+    transition: opacity 0.3s ease;
+}
+
+.engine-selector-container.expanded ~ #search-input::placeholder {
+    opacity: 0;
+    transition-delay: 0s;
+}
+
+/* After expansion is complete, show placeholder again with padding */
+.engine-selector-container.expanded ~ #search-input::placeholder {
+    opacity: 1;
+    transition-delay: 0.3s;
+}
+
+/* Ensure the engine options are visible on top of other elements */
+.engine-selector-container.expanded {
+    z-index: 100;
+}
+
+/* Fix for SVG visibility */
+.engine-option svg {
+    pointer-events: none; /* Ensures clicks go to the button, not the SVG */
+}
+
+/* Active engine styling */
+.engine-option.active {
+    background: rgba(30,64,175,0.7);
+    border-color: #ffffff;
+    box-shadow: 0 0 10px rgba(59,130,246,0.7);
 }
