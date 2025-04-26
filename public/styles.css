@@ -12,7 +12,7 @@ body {
 .gradient-border {
     position: relative;
     border-radius: 6px;
-    overflow: hidden;
+    overflow: visible; /* Changed from hidden to allow tooltips to be visible */
 }
 .gradient-border::before {
     content: "";
@@ -138,6 +138,7 @@ input::placeholder {
     z-index: 29;
     border: 1px solid rgba(59,130,246,0.3);
     width: 420px; /* Increased width to accommodate all icons */
+    overflow: visible; /* Allow tooltips to be visible outside the container */
 }
 
 /* When expanded, show the options */
@@ -212,7 +213,7 @@ input::placeholder {
 
 /* Ensure the engine options are visible on top of other elements */
 .engine-selector-container.expanded {
-    z-index: 100;
+    z-index: 9000;
 }
 
 /* Fix for SVG visibility */
@@ -225,4 +226,39 @@ input::placeholder {
     background: rgba(30,64,175,0.7);
     border-color: #ffffff;
     box-shadow: 0 0 10px rgba(59,130,246,0.7);
+}
+
+/* Tooltip Styles */
+.engine-option {
+    position: relative;
+}
+
+.engine-option::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -65px; /* Positioned further down */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(13,25,45,0.95);
+    color: #60a5fa;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    border: 1px solid rgba(59,130,246,0.5);
+    box-shadow: 0 0 8px rgba(59,130,246,0.4);
+    text-shadow: 0 0 5px rgba(96,165,250,0.3);
+    z-index: 9999;
+    /* Ensure the tooltip is not clipped by parent containers */
+    overflow: visible;
+}
+
+.engine-option:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: -60px; /* Slight animation upward */
 }
