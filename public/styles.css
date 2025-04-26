@@ -137,7 +137,7 @@ input::placeholder {
     transition: all 0.3s ease;
     z-index: 29;
     border: 1px solid rgba(59,130,246,0.3);
-    width: 320px; /* Fixed width to accommodate all icons */
+    width: 420px; /* Increased width to accommodate all icons */
 }
 
 /* When expanded, show the options */
@@ -191,7 +191,7 @@ input::placeholder {
 }
 
 .engine-selector-container.expanded ~ #search-input {
-    padding-left: 280px; /* Adjust based on the expanded width */
+    padding-left: 380px; /* Increased to match the new container width */
 }
 
 /* Ensure the search input text is visible during transition */
