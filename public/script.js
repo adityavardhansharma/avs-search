@@ -312,6 +312,9 @@ if (_engineNotifyWrapper) _engineNotifyWrapper.style.position = 'relative';
 // ------------------------------
 // 2) Transient pop-up for "Selected …"
 // ------------------------------
+let currentNoticeTimeout = null;
+let currentNotice = null;
+
 function showTransientEngineName() {
   const wrapper = _engineNotifyWrapper;
   if (!wrapper) return;
@@ -319,8 +322,21 @@ function showTransientEngineName() {
   const cs = getComputedStyle(h1);
   const offset = h1.offsetHeight + parseFloat(cs.marginBottom);
 
+  // Remove any existing notification first
+  if (currentNotice) {
+    currentNotice.remove();
+    currentNotice = null;
+  }
+
+  // Clear any pending timeouts
+  if (currentNoticeTimeout) {
+    clearTimeout(currentNoticeTimeout);
+    currentNoticeTimeout = null;
+  }
+
   // build the notice
   const notice = document.createElement('div');
+  notice.id = 'engine-transient-notice';
   notice.textContent =
     document
       .querySelector(`.engine-option[data-engine="${currentEngine}"]`)
@@ -343,6 +359,7 @@ function showTransientEngineName() {
   });
 
   wrapper.appendChild(notice);
+  currentNotice = notice;
 
   // fade in
   requestAnimationFrame(() => {
@@ -351,10 +368,16 @@ function showTransientEngineName() {
   });
 
   // after 1.5s, fade out and remove
-  setTimeout(() => {
-    notice.style.opacity = '0';
-    notice.style.transform = 'translateX(-50%) translateY(-0.5rem)';
-    setTimeout(() => notice.remove(), 300);
+  currentNoticeTimeout = setTimeout(() => {
+    if (notice.parentNode) { // Check if notice is still in the DOM
+      notice.style.opacity = '0';
+      notice.style.transform = 'translateX(-50%) translateY(-0.5rem)';
+      currentNoticeTimeout = setTimeout(() => {
+        if (notice.parentNode) notice.remove();
+        currentNotice = null;
+        currentNoticeTimeout = null;
+      }, 300);
+    }
   }, 1500);
 }
 
