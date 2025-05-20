@@ -97,6 +97,8 @@ engineOptionButtons.forEach((button) => {
         updateEngineIcon();
         engineSelectorContainer.classList.remove("expanded");
         searchInput.setAttribute("placeholder", "Search anything...");
+        // Show transient notification when engine is changed via click
+        showTransientEngineName();
     });
 });
 
@@ -405,8 +407,8 @@ window.addEventListener("load", () => {
     const oldDisplay = document.getElementById('selected-engine-display');
     if (oldDisplay) oldDisplay.remove();
 
-    // Show transient notification on page load
-    showTransientEngineName();
+    // Don't show transient notification on page load
+    // Only show it when user actively changes engines
 
     // Prefetch common suggestions
     setTimeout(() => {
