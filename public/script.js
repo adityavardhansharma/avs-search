@@ -106,6 +106,25 @@ function updateEngineIcon() {
     }
 }
 
+// Function removed as it's replaced by showTransientEngineName
+function showSelectedEngineName() {
+  // Empty function to maintain compatibility with existing code
+  // This function is no longer needed as we're using the transient notification instead
+}
+
+// ---------------------------------------------
+// 2) Cycle to the next engine in engineOptionButtons
+// ---------------------------------------------
+function cycleSearchEngine() {
+  const buttons = Array.from(engineOptionButtons);
+  const keys = buttons.map((b) => b.dataset.engine);
+  let idx = keys.indexOf(currentEngine);
+  idx = (idx + 1) % keys.length;
+  currentEngine = keys[idx];
+  updateEngineIcon();
+  // showSelectedEngineName() call removed as we're using the transient notification instead
+}
+
 // --- Suggestions & Search Functionality ---
 function fetchSuggestions(query) {
     if (!query || query.trim() === "") {
@@ -272,10 +291,99 @@ document.addEventListener("click", (e) => {
     }
 });
 
+// ---------------------------------------------
+// 3) Listen for Ctrl+K anywhere on the page
+// ---------------------------------------------
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    cycleSearchEngine();
+  }
+});
+
+// ------------------------------
+// 1) Make the H1/box wrapper relative
+// ------------------------------
+const _engineNotifyWrapper = document.querySelector(
+  '.w-full.max-w-2xl.text-center.mb-12'
+);
+if (_engineNotifyWrapper) _engineNotifyWrapper.style.position = 'relative';
+
+// ------------------------------
+// 2) Transient pop-up for "Selected …"
+// ------------------------------
+function showTransientEngineName() {
+  const wrapper = _engineNotifyWrapper;
+  if (!wrapper) return;
+  const h1 = wrapper.querySelector('h1.metallic-text');
+  const cs = getComputedStyle(h1);
+  const offset = h1.offsetHeight + parseFloat(cs.marginBottom);
+
+  // build the notice
+  const notice = document.createElement('div');
+  notice.textContent =
+    document
+      .querySelector(`.engine-option[data-engine="${currentEngine}"]`)
+      .getAttribute('data-tooltip') || currentEngine;
+
+  Object.assign(notice.style, {
+    position: 'absolute',
+    top:       `${offset}px`,
+    left:      '50%',
+    transform: 'translateX(-50%) translateY(-0.5rem)',
+    opacity:   '0',
+    background:'rgba(0,0,0,0.7)',
+    color:     '#60a5fa',
+    padding:   '0.25rem 0.5rem',
+    borderRadius: '0.25rem',
+    fontSize:  '0.875rem',
+    pointerEvents: 'none',
+    transition: 'opacity 0.3s ease, transform 0.3s ease',
+    zIndex:    '1000'
+  });
+
+  wrapper.appendChild(notice);
+
+  // fade in
+  requestAnimationFrame(() => {
+    notice.style.opacity = '1';
+    notice.style.transform = 'translateX(-50%) translateY(0)';
+  });
+
+  // after 1.5s, fade out and remove
+  setTimeout(() => {
+    notice.style.opacity = '0';
+    notice.style.transform = 'translateX(-50%) translateY(-0.5rem)';
+    setTimeout(() => notice.remove(), 300);
+  }, 1500);
+}
+
+// ------------------------------
+// 3) Monkey-patch your cycleSearchEngine()
+//    so it also shows our pop-up
+// ------------------------------
+if (typeof cycleSearchEngine === 'function') {
+  const _oldCycle = cycleSearchEngine;
+  cycleSearchEngine = function() {
+    _oldCycle();
+    showTransientEngineName();
+  };
+}
+
+// ---------------------------------------------
+// 4) Show the initial engine on page‐load
+// ---------------------------------------------
 window.addEventListener("load", () => {
     searchInput.setAttribute("autocomplete", "off");
     searchInput.focus();
     updateEngineIcon();
+
+    // Remove any existing selected-engine-display element
+    const oldDisplay = document.getElementById('selected-engine-display');
+    if (oldDisplay) oldDisplay.remove();
+
+    // Show transient notification on page load
+    showTransientEngineName();
 
     // Prefetch common suggestions
     setTimeout(() => {
