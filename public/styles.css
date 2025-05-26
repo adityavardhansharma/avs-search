@@ -262,3 +262,24 @@ input::placeholder {
     visibility: visible;
     bottom: -60px; /* Slight animation upward */
 }
+
+/* Pro+ Notification Styles */
+#pro-plus-notification {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+    font-family: 'Space Grotesk', sans-serif;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: slideInDown 0.3s ease-out forwards;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
