@@ -13,12 +13,11 @@ const engineOptionButtons = document.querySelectorAll(".engine-option");
 const proPlusToggle = document.getElementById("pro-plus-toggle");
 const proPlusIndicator = document.getElementById("pro-plus-indicator");
 
+// Global state
 let suggestionsData = [];
 let activeIndex = -1;
-let controller = null;
-let clientCache = {};
 let currentEngine = "web";
-let isProPlusActive = false; // Pro+ mode state
+let isProPlusActive = false; // Initialize Pro+ mode as disabled
 
 const engines = {
     web: {
@@ -465,12 +464,16 @@ proPlusToggle.addEventListener("click", (e) => {
 });
 
 function updateProPlusState() {
-    if (isProPlusActive) {
-        proPlusIndicator.style.opacity = '1';
-        proPlusToggle.style.color = '#10b981'; // Green color when active
-    } else {
-        proPlusIndicator.style.opacity = '0';
-        proPlusToggle.style.color = ''; // Reset to default
+    // Update the indicator visibility
+    const indicator = document.getElementById('pro-plus-indicator');
+    if (indicator) {
+        indicator.style.opacity = isProPlusActive ? '1' : '0';
+    }
+
+    // Update the powered by text
+    const poweredBySpan = document.querySelector('.flex.justify-center.space-x-6 span:first-child');
+    if (poweredBySpan) {
+        poweredBySpan.textContent = `POWERED BY: ${isProPlusActive ? 'KAGI SEARCH' : 'UNDUCK'}`;
     }
 }
 
@@ -493,7 +496,6 @@ function showProPlusNotification() {
         color: #60a5fa;
         padding: 16px 24px;
         border-radius: 8px;
-        border: 1px solid ${isProPlusActive ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'};
         box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
         z-index: 10000;
         font-weight: 600;
@@ -528,3 +530,8 @@ function showProPlusNotification() {
         }, 300);
     }, 3000);
 }
+
+// Initial state update
+document.addEventListener('DOMContentLoaded', () => {
+    updateProPlusState();
+});
