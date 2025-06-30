@@ -18,6 +18,9 @@ let suggestionsData = [];
 let activeIndex = -1;
 let currentEngine = "web";
 let isProPlusActive = false; // Initialize Pro+ mode as disabled
+let isGeminiActive = false; // Initialize Gemini AI mode as disabled
+let clientCache = {}; // Cache for suggestions
+let controller = null; // AbortController for fetch requests
 
 const engines = {
     web: {
@@ -226,6 +229,14 @@ function updateActiveSuggestion() {
 function performSearch(query) {
     if (!query) return;
 
+    // Check if Gemini AI mode is active
+    if (isGeminiActive) {
+        // Use Gemini search with udm=50 parameter
+        const geminiUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&udm=50`;
+        window.location.href = geminiUrl;
+        return;
+    }
+
     // Check if the current engine has a customUrl
     if (engines[currentEngine] && engines[currentEngine].customUrl) {
         // Replace %s with the encoded search query
@@ -409,6 +420,93 @@ if (typeof cycleSearchEngine === 'function') {
 }
 
 // ---------------------------------------------
+// Gemini AI Mode Button Functionality
+// ---------------------------------------------
+function toggleGeminiMode() {
+    isGeminiActive = !isGeminiActive;
+    updateGeminiState();
+    showGeminiNotification();
+}
+
+function updateGeminiState() {
+    // Update the indicator visibility
+    const indicator = document.getElementById('gemini-indicator');
+    if (indicator) {
+        indicator.style.opacity = isGeminiActive ? '1' : '0';
+    }
+
+    // Update the powered by text
+    updatePoweredByText();
+}
+
+function updatePoweredByText() {
+    const poweredBySpan = document.querySelector('.flex.justify-center.space-x-6 span:first-child');
+    if (poweredBySpan) {
+        if (isGeminiActive) {
+            poweredBySpan.textContent = 'POWERED BY: AI MODE';
+        } else if (isProPlusActive) {
+            poweredBySpan.textContent = 'POWERED BY: KAGI SEARCH';
+        } else {
+            poweredBySpan.textContent = 'POWERED BY: UNDUCK';
+        }
+    }
+}
+
+function showGeminiNotification() {
+    // Remove any existing notification
+    const existingNotification = document.getElementById('gemini-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.id = 'gemini-notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(13, 25, 45, 0.95);
+        color: #60a5fa;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+        z-index: 10000;
+        font-weight: 600;
+        font-size: 16px;
+        backdrop-filter: blur(10px);
+        font-family: 'Space Grotesk', sans-serif;
+        opacity: 0;
+        transition: all 0.3s ease-in-out;
+    `;
+    
+    notification.textContent = isGeminiActive ? 
+        '🤖 AI Mode ENABLED - Using Gemini Search' : 
+        '🤖 AI Mode DISABLED - Using Standard Search';
+
+    // Add to page
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(-50%) translateY(0)';
+    }, 10);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(-50%) translateY(-20px)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 300);
+    }, 3000);
+}
+
+// ---------------------------------------------
 // 4) Show the initial engine on page‐load
 // ---------------------------------------------
 window.addEventListener("load", () => {
@@ -419,6 +517,15 @@ window.addEventListener("load", () => {
     // Remove any existing selected-engine-display element
     const oldDisplay = document.getElementById('selected-engine-display');
     if (oldDisplay) oldDisplay.remove();
+
+    // Set up Gemini AI mode button event listener
+    const geminiBtn = document.getElementById('gemini-search-btn');
+    if (geminiBtn) {
+        geminiBtn.addEventListener('click', toggleGeminiMode);
+        console.log('Gemini button event listener attached');
+    } else {
+        console.error('Gemini button not found!');
+    }
 
     // Don't show transient notification on page load
     // Only show it when user actively changes engines
@@ -471,10 +578,7 @@ function updateProPlusState() {
     }
 
     // Update the powered by text
-    const poweredBySpan = document.querySelector('.flex.justify-center.space-x-6 span:first-child');
-    if (poweredBySpan) {
-        poweredBySpan.textContent = `POWERED BY: ${isProPlusActive ? 'KAGI SEARCH' : 'UNDUCK'}`;
-    }
+    updatePoweredByText();
 }
 
 function showProPlusNotification() {
@@ -534,4 +638,11 @@ function showProPlusNotification() {
 // Initial state update
 document.addEventListener('DOMContentLoaded', () => {
     updateProPlusState();
+    updateGeminiState();
+});
+
+// Add input event listener for search suggestions
+searchInput.addEventListener('input', function(e) {
+  const query = e.target.value.trim();
+  fetchSuggestions(query);
 });

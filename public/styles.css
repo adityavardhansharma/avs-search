@@ -65,7 +65,7 @@ input::placeholder {
     border: 1px solid rgba(0,71,171,0.5);
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3), 0 0 10px rgba(30,144,255,0.2);
-    z-index: 10;
+    z-index: 9999;
     max-height: 300px;
     overflow-y: auto;
 }
