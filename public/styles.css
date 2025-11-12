@@ -263,7 +263,7 @@ input::placeholder {
     bottom: -60px; /* Slight animation upward */
 }
 
-/* Pro+ Notification Styles */
+/* Pro Notification Styles */
 #pro-plus-notification {
     opacity: 0;
     transform: translateX(-50%) translateY(-20px);

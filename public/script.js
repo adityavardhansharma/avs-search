@@ -610,9 +610,9 @@ function showProPlusNotification() {
         transition: all 0.3s ease-in-out;
     `;
     
-    notification.textContent = isProPlusActive ? 
-        '⚡ Pro+ Mode ENABLED - Using Kagi Search' : 
-        '⚡ Pro+ Mode DISABLED - Using DuckDuckGo';
+    notification.textContent = isProPlusActive ?
+        'Pro Mode ENABLED - Using Kagi Search' :
+        'Pro Mode DISABLED - Using Unduck Search';
 
     // Add to page
     document.body.appendChild(notification);
