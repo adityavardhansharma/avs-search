@@ -283,3 +283,220 @@ input::placeholder {
         transform: translateX(-50%) translateY(0);
     }
 }
+
+/* Mobile Circular Engine Selector */
+@media (max-width: 768px) {
+    /* Hide desktop engine selector on mobile */
+    .engine-selector-container.expanded .engine-options {
+        display: none;
+    }
+    
+    /* Prevent search input padding changes on mobile */
+    .engine-selector-container.expanded ~ #search-input {
+        padding-left: 0;
+    }
+}
+
+/* Circular Engine Modal for Mobile */
+.engine-circular-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.engine-circular-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.engine-circle-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    transform: scale(0.8);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.engine-circular-modal.active .engine-circle-container {
+    transform: scale(1);
+}
+
+/* Center selected engine */
+.engine-center-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(147,197,253,0.1));
+    border: 2px solid #60a5fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(59,130,246,0.4), 0 0 40px rgba(59,130,246,0.2);
+    animation: centerPulse 2s ease-in-out infinite;
+}
+
+@keyframes centerPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.4), 0 0 40px rgba(59,130,246,0.2); }
+    50% { box-shadow: 0 0 30px rgba(59,130,246,0.6), 0 0 60px rgba(59,130,246,0.3); }
+}
+
+.engine-center-icon svg {
+    width: 32px;
+    height: 32px;
+    color: #60a5fa;
+}
+
+/* Circular positioned engine options */
+.engine-circle-option {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(13,25,45,0.9);
+    border: 2px solid rgba(59,130,246,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    transform-origin: center;
+    /* perfect circle placement using polar coords */
+    --r: 110px;
+    --θ: 0deg;
+    transform: translate(-50%, -50%) rotate(var(--θ)) translate(var(--r)) rotate(calc(-1 * var(--θ)));
+}
+
+.engine-circle-option:hover {
+    transform: translate(-50%, -50%) rotate(var(--θ)) translate(var(--r)) rotate(calc(-1 * var(--θ))) scale(1.1);
+    background: rgba(30,64,175,0.8);
+    border-color: #60a5fa;
+    box-shadow: 0 0 15px rgba(59,130,246,0.5);
+}
+
+.engine-circle-option svg {
+    width: 28px;
+    height: 28px;
+    color: #60a5fa;
+    fill: currentColor;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.engine-circle-option:hover svg {
+    color: #ffffff;
+    fill: currentColor;
+}
+
+/* Ensure SVG paths inherit the fill color */
+.engine-circle-option svg path {
+    fill: currentColor !important;
+}
+
+.engine-center-icon svg {
+    width: 36px;
+    height: 36px;
+    color: #60a5fa;
+    fill: currentColor;
+}
+
+.engine-center-icon svg path {
+    fill: currentColor !important;
+}
+
+/* Evenly spaced positions around the circle (starting at top, clockwise) */
+.engine-circle-option:nth-child(2) { --θ: -90deg; animation: fadeInCircle 0.6s ease-out 0.1s both; }
+.engine-circle-option:nth-child(3) { --θ: -45deg; animation: fadeInCircle 0.6s ease-out 0.2s both; }
+.engine-circle-option:nth-child(4) { --θ:   0deg; animation: fadeInCircle 0.6s ease-out 0.3s both; }
+.engine-circle-option:nth-child(5) { --θ:  45deg; animation: fadeInCircle 0.6s ease-out 0.4s both; }
+.engine-circle-option:nth-child(6) { --θ:  90deg; animation: fadeInCircle 0.6s ease-out 0.5s both; }
+.engine-circle-option:nth-child(7) { --θ: 135deg; animation: fadeInCircle 0.6s ease-out 0.6s both; }
+.engine-circle-option:nth-child(8) { --θ: 180deg; animation: fadeInCircle 0.6s ease-out 0.7s both; }
+.engine-circle-option:nth-child(9) { --θ: 225deg; animation: fadeInCircle 0.6s ease-out 0.8s both; }
+
+@keyframes fadeInCircle {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Close button */
+.engine-modal-close {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(239,68,68,0.2);
+    border: 2px solid rgba(239,68,68,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #ef4444;
+}
+
+.engine-modal-close:hover {
+    background: rgba(239,68,68,0.3);
+    border-color: #ef4444;
+    transform: scale(1.1);
+}
+
+/* Engine labels for mobile */
+.engine-circle-label {
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #60a5fa;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.engine-circle-option:hover .engine-circle-label {
+    opacity: 1;
+}
+
+/* Ripple effect on selection */
+@keyframes ripple {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+.engine-circle-option.selected::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: rgba(59,130,246,0.3);
+    animation: ripple 0.6s ease-out;
+}
