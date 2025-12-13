@@ -344,6 +344,16 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ---------------------------------------------
+// Listen for Ctrl/Cmd+Shift+O to toggle AI mode
+// ---------------------------------------------
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
+    e.preventDefault();
+    toggleGeminiMode();
+  }
+});
+
 // ------------------------------
 // 1) Make the H1/box wrapper relative
 // ------------------------------
