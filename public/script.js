@@ -30,6 +30,23 @@ let isProPlusActive = false; // Initialize Pro+ mode as disabled
 let isGeminiActive = false; // Initialize Gemini AI mode as disabled
 let clientCache = {}; // Cache for suggestions
 let controller = null; // AbortController for fetch requests
+let inputDebounceTimeout = null;
+const SUGGESTION_DEBOUNCE_MS = 150;
+
+function clearSuggestions() {
+    suggestionsContainer.innerHTML = "";
+    suggestionsData = [];
+    activeIndex = -1;
+}
+
+function getSuggestionCacheKey(query) {
+    return query.trim().toLowerCase();
+}
+
+function areSuggestionsEqual(currentSuggestions, nextSuggestions) {
+    return currentSuggestions.length === nextSuggestions.length &&
+        currentSuggestions.every((suggestion, index) => suggestion === nextSuggestions[index]);
+}
 
 function clearSuggestions() {
     suggestionsContainer.innerHTML = "";
@@ -170,33 +187,48 @@ function cycleSearchEngine() {
 
 // --- Suggestions & Search Functionality ---
 function fetchSuggestions(query) {
-    if (!query || query.trim() === "") {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) {
         clearSuggestions();
         return Promise.resolve([]);
     }
-    if (clientCache[query]) {
-        suggestionsData = clientCache[query];
-        renderSuggestions();
+
+    const cacheKey = getSuggestionCacheKey(trimmedQuery);
+    if (clientCache[cacheKey]) {
+        const cachedSuggestions = clientCache[cacheKey];
+        if (!areSuggestionsEqual(suggestionsData, cachedSuggestions)) {
+            suggestionsData = cachedSuggestions;
+            activeIndex = -1;
+            renderSuggestions();
+        }
         return Promise.resolve(suggestionsData);
     }
+
     if (controller) {
         controller.abort();
     }
     controller = new AbortController();
-    suggestionsContainer.innerHTML = "";
-    return fetch(`/api/suggestions?q=${encodeURIComponent(query)}`, {
+
+    return fetch(`/api/suggestions?q=${encodeURIComponent(trimmedQuery)}`, {
         signal: controller.signal,
         headers: { "X-Requested-With": "XMLHttpRequest" }
     })
         .then((response) => response.json())
         .then((data) => {
-            if (searchInput.value.trim() !== query) return [];
+            if (searchInput.value.trim() !== trimmedQuery) return suggestionsData;
             if (!searchInput.value.trim()) {
                 clearSuggestions();
                 return [];
             }
-            suggestionsData = Array.isArray(data) ? data : [];
-            clientCache[query] = suggestionsData;
+
+            const nextSuggestions = Array.isArray(data) ? data : [];
+            clientCache[cacheKey] = nextSuggestions;
+
+            if (areSuggestionsEqual(suggestionsData, nextSuggestions)) {
+                return suggestionsData;
+            }
+
+            suggestionsData = nextSuggestions;
             activeIndex = -1;
             renderSuggestions();
             return suggestionsData;
@@ -204,19 +236,22 @@ function fetchSuggestions(query) {
         .catch((error) => {
             if (error.name !== "AbortError") {
                 console.error("Error fetching suggestions:", error);
-                clearSuggestions();
             }
-            return [];
+            return suggestionsData;
         });
 }
 
 function renderSuggestions() {
-    suggestionsContainer.innerHTML = "";
     if (!searchInput.value.trim()) {
         clearSuggestions();
         return;
     }
-    if (!suggestionsData.length) return;
+
+    if (!suggestionsData.length) {
+        suggestionsContainer.replaceChildren();
+        return;
+    }
+
     const fragment = document.createDocumentFragment();
     suggestionsData.forEach((suggestion) => {
         const element = document.createElement("div");
@@ -229,18 +264,35 @@ function renderSuggestions() {
         };
         fragment.appendChild(element);
     });
-    suggestionsContainer.appendChild(fragment);
+    suggestionsContainer.replaceChildren(fragment);
 }
 
 function handleInput() {
     const query = searchInput.value.trim();
+
+    if (inputDebounceTimeout) {
+        clearTimeout(inputDebounceTimeout);
+        inputDebounceTimeout = null;
+    }
+
     if (!query) {
+        if (controller) {
+            controller.abort();
+        }
         clearSuggestions();
         return;
     }
-    window.requestAnimationFrame(() => {
+
+    const cacheKey = getSuggestionCacheKey(query);
+    if (clientCache[cacheKey] && !areSuggestionsEqual(suggestionsData, clientCache[cacheKey])) {
+        suggestionsData = clientCache[cacheKey];
+        activeIndex = -1;
+        renderSuggestions();
+    }
+
+    inputDebounceTimeout = setTimeout(() => {
         fetchSuggestions(query);
-    });
+    }, SUGGESTION_DEBOUNCE_MS);
 }
 
 function updateActiveSuggestion() {
@@ -608,7 +660,7 @@ window.addEventListener("load", () => {
                 .then((response) => response.json())
                 .then((data) => {
                     if (Array.isArray(data)) {
-                        clientCache[term] = data;
+                        clientCache[getSuggestionCacheKey(term)] = data;
                     }
                 })
                 .catch(() => {});
