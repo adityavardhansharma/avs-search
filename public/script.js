@@ -31,6 +31,12 @@ let isGeminiActive = false; // Initialize Gemini AI mode as disabled
 let clientCache = {}; // Cache for suggestions
 let controller = null; // AbortController for fetch requests
 
+function clearSuggestions() {
+    suggestionsContainer.innerHTML = "";
+    suggestionsData = [];
+    activeIndex = -1;
+}
+
 const engines = {
     web: {
         icon: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6">
@@ -91,6 +97,17 @@ const engines = {
         customUrl: "https://chatgpt.com/?q=%s"
     }
 };
+
+function syncEngineIconsFromMarkup() {
+    engineOptionButtons.forEach((button) => {
+        const engineKey = button.dataset.engine;
+        const icon = button.querySelector("svg");
+
+        if (engineKey && icon && engines[engineKey]) {
+            engines[engineKey].icon = icon.outerHTML;
+        }
+    });
+}
 
 // --- Engine Selector Behavior ---
 // When the container is clicked, toggle the "expanded" state and update placeholder
@@ -154,8 +171,7 @@ function cycleSearchEngine() {
 // --- Suggestions & Search Functionality ---
 function fetchSuggestions(query) {
     if (!query || query.trim() === "") {
-        suggestionsContainer.innerHTML = "";
-        suggestionsData = [];
+        clearSuggestions();
         return Promise.resolve([]);
     }
     if (clientCache[query]) {
@@ -176,8 +192,7 @@ function fetchSuggestions(query) {
         .then((data) => {
             if (searchInput.value.trim() !== query) return [];
             if (!searchInput.value.trim()) {
-                suggestionsContainer.innerHTML = "";
-                suggestionsData = [];
+                clearSuggestions();
                 return [];
             }
             suggestionsData = Array.isArray(data) ? data : [];
@@ -189,8 +204,7 @@ function fetchSuggestions(query) {
         .catch((error) => {
             if (error.name !== "AbortError") {
                 console.error("Error fetching suggestions:", error);
-                suggestionsData = [];
-                suggestionsContainer.innerHTML = "";
+                clearSuggestions();
             }
             return [];
         });
@@ -199,7 +213,7 @@ function fetchSuggestions(query) {
 function renderSuggestions() {
     suggestionsContainer.innerHTML = "";
     if (!searchInput.value.trim()) {
-        suggestionsData = [];
+        clearSuggestions();
         return;
     }
     if (!suggestionsData.length) return;
@@ -221,8 +235,7 @@ function renderSuggestions() {
 function handleInput() {
     const query = searchInput.value.trim();
     if (!query) {
-        suggestionsContainer.innerHTML = "";
-        suggestionsData = [];
+        clearSuggestions();
         return;
     }
     window.requestAnimationFrame(() => {
@@ -243,8 +256,50 @@ function updateActiveSuggestion() {
     });
 }
 
+function getNavigableUrl(input) {
+    const candidate = input.trim();
+
+    if (!candidate || candidate.startsWith("!") || /\s/.test(candidate)) {
+        return null;
+    }
+
+    const firstColon = candidate.indexOf(":");
+    const firstDot = candidate.indexOf(".");
+    const hasSchemeLikePrefix = firstColon > -1 && (firstDot === -1 || firstColon < firstDot);
+    const hasProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(candidate);
+    const hasLocalhost = /^localhost(?::\d+)?(?:[/?#]|$)/i.test(candidate);
+    const hasIPv4 = /^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:[/?#]|$)/.test(candidate);
+    const hasDomainDot = /^(?:www\.)?[^/?#.]+\.[^/?#]+(?:[/?#]|$)/i.test(candidate);
+
+    if (hasSchemeLikePrefix && !hasProtocol && !hasLocalhost) {
+        return null;
+    }
+
+    if (!hasProtocol && !hasLocalhost && !hasIPv4 && !hasDomainDot) {
+        return null;
+    }
+
+    try {
+        const url = new URL(hasProtocol ? candidate : `https://${candidate}`);
+
+        if (!["http:", "https:"].includes(url.protocol)) {
+            return null;
+        }
+
+        return url.href;
+    } catch {
+        return null;
+    }
+}
+
 function performSearch(query) {
     if (!query) return;
+
+    const navigableUrl = getNavigableUrl(query);
+    if (navigableUrl) {
+        window.location.href = navigableUrl;
+        return;
+    }
 
     // Check if Gemini AI mode is active
     if (isGeminiActive) {
@@ -273,20 +328,9 @@ function performSearch(query) {
     if (currentEngine !== "web" && !query.startsWith("!")) {
         query = engines[currentEngine].bang + query;
     }
-    const isURLLike = query.includes(".") && !query.startsWith("!");
-    // A more robust URL test pattern:
-    const domainPattern =
-        /^(www\.)?[a-zA-Z0-9][-a-zA-Z0-9@:%._+~#=]{0,256}\.[a-zA-Z0-9()]{1,}(\.[a-zA-Z0-9()]{1,})*$/i;
-    if (isURLLike && domainPattern.test(query)) {
-        const url =
-            query.startsWith("http://") || query.startsWith("https://")
-                ? query
-                : "https://" + query;
-        window.location.href = url;
-    } else {
-        // Use DuckDuckGo (unduck) for normal web searches when Pro+ is not active
-        window.location.href = `https://unduck.link?q=${encodeURIComponent(query)}`;
-    }
+
+    // Use DuckDuckGo (unduck) for normal web searches when Pro+ is not active
+    window.location.href = `https://unduck.link?q=${encodeURIComponent(query)}`;
 }
 
 // --- Event Listeners ---
@@ -315,8 +359,7 @@ searchInput.addEventListener("keydown", (e) => {
         updateActiveSuggestion();
     } else if (e.key === "Escape") {
         e.preventDefault();
-        suggestionsContainer.innerHTML = "";
-        suggestionsData = [];
+        clearSuggestions();
     }
 });
 
@@ -329,8 +372,7 @@ document.addEventListener("click", (e) => {
         !searchInput.contains(e.target) &&
         !suggestionsContainer.contains(e.target)
     ) {
-        suggestionsContainer.innerHTML = "";
-        suggestionsData = [];
+        clearSuggestions();
     }
 });
 
@@ -479,16 +521,14 @@ function updatePoweredByText() {
     }
 }
 
-function showGeminiNotification() {
-    // Remove any existing notification
-    const existingNotification = document.getElementById('gemini-notification');
+function showModeNotification(id, message) {
+    const existingNotification = document.getElementById(id);
     if (existingNotification) {
         existingNotification.remove();
     }
 
-    // Create notification element
     const notification = document.createElement('div');
-    notification.id = 'gemini-notification';
+    notification.id = id;
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -507,21 +547,15 @@ function showGeminiNotification() {
         opacity: 0;
         transition: all 0.3s ease-in-out;
     `;
-    
-    notification.textContent = isGeminiActive ? 
-        '🤖 AI Mode ENABLED - Using Gemini Search' : 
-        '🤖 AI Mode DISABLED - Using Standard Search';
+    notification.textContent = message;
 
-    // Add to page
     document.body.appendChild(notification);
 
-    // Animate in
     setTimeout(() => {
         notification.style.opacity = '1';
         notification.style.transform = 'translateX(-50%) translateY(0)';
     }, 10);
 
-    // Remove after 3 seconds
     setTimeout(() => {
         notification.style.opacity = '0';
         notification.style.transform = 'translateX(-50%) translateY(-20px)';
@@ -533,12 +567,22 @@ function showGeminiNotification() {
     }, 3000);
 }
 
+function showGeminiNotification() {
+    showModeNotification(
+        'gemini-notification',
+        isGeminiActive
+            ? '🤖 AI Mode ENABLED - Using Gemini Search'
+            : '🤖 AI Mode DISABLED - Using Standard Search'
+    );
+}
+
 // ---------------------------------------------
 // 4) Show the initial engine on page‐load
 // ---------------------------------------------
 window.addEventListener("load", () => {
     searchInput.setAttribute("autocomplete", "off");
     searchInput.focus();
+    syncEngineIconsFromMarkup();
     updateEngineIcon();
 
     // Remove any existing selected-engine-display element
@@ -621,57 +665,12 @@ function updateProPlusState() {
 }
 
 function showProPlusNotification() {
-    // Remove any existing notification
-    const existingNotification = document.getElementById('pro-plus-notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.id = 'pro-plus-notification';
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(13, 25, 45, 0.95);
-        color: #60a5fa;
-        padding: 16px 24px;
-        border-radius: 8px;
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
-        z-index: 10000;
-        font-weight: 600;
-        font-size: 16px;
-        backdrop-filter: blur(10px);
-        font-family: 'Space Grotesk', sans-serif;
-        opacity: 0;
-        transition: all 0.3s ease-in-out;
-    `;
-    
-    notification.textContent = isProPlusActive ?
-        'Pro Mode ENABLED - Using Kagi Search' :
-        'Pro Mode DISABLED - Using Unduck Search';
-
-    // Add to page
-    document.body.appendChild(notification);
-
-    // Animate in
-    setTimeout(() => {
-        notification.style.opacity = '1';
-        notification.style.transform = 'translateX(-50%) translateY(0)';
-    }, 10);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateX(-50%) translateY(-20px)';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 300);
-    }, 3000);
+    showModeNotification(
+        'pro-plus-notification',
+        isProPlusActive
+            ? 'Pro Mode ENABLED - Using Kagi Search'
+            : 'Pro Mode DISABLED - Using Unduck Search'
+    );
 }
 
 // Initial state update
@@ -679,12 +678,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateProPlusState();
     updateGeminiState();
     populateMobileModalIcons(); // Populate mobile modal with correct SVGs
-});
-
-// Add input event listener for search suggestions
-searchInput.addEventListener('input', function(e) {
-  const query = e.target.value.trim();
-  fetchSuggestions(query);
 });
 
 // --- Mobile Circular Engine Selector Functions ---
