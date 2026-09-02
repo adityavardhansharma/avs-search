@@ -1,3 +1,4 @@
+@import "@fontsource-variable/space-grotesk";
 @import "tailwindcss";
 /* preserve Tailwind v3 button-cursor behavior (v4 preflight parity) */
 button,[role="button"]{cursor:pointer}
@@ -222,13 +223,6 @@ input::placeholder {
 /* Fix for SVG visibility */
 .engine-option svg {
     pointer-events: none; /* Ensures clicks go to the button, not the SVG */
-}
-
-/* Active engine styling */
-.engine-option.active {
-    background: rgba(30,64,175,0.7);
-    border-color: #ffffff;
-    box-shadow: 0 0 10px rgba(59,130,246,0.7);
 }
 
 /* Tooltip Styles */

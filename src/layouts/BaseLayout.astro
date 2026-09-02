@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import latinWoff2 from '@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2?url';
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -103,13 +104,8 @@ import '../styles/global.css';
 
     <link rel="icon" type="image/png" href="/rocket.png">
     <!-- Preload the primary font subset so first paint never waits for CSS discovery -->
-    <!-- Google Font: preconnect + display=swap so text renders without blocking -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
-            rel="stylesheet"
-    />
+    <link rel="preload" href={latinWoff2} as="font" type="font/woff2" crossorigin>
+    <!-- Font is self-hosted at build time (no third-party font requests) - see src/styles/global.css -->
     <!-- Tailwind is compiled at build time (no runtime CDN) - see src/styles/global.css -->
     <!-- Vercel Web Analytics -->
     <script>
