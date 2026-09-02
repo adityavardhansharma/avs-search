@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header.astro';
+import SearchMain from '../components/SearchMain.astro';
+import EngineModal from '../components/EngineModal.astro';
+import Footer from '../components/Footer.astro';
+---
+<BaseLayout>
+	<Header />
+	<SearchMain />
+	<EngineModal />
+	<Footer />
+	<script>import "../scripts/search.ts";</script>
+</BaseLayout>
