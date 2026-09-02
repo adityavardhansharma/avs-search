@@ -33,12 +33,6 @@ let controller = null; // AbortController for fetch requests
 let inputDebounceTimeout = null;
 const SUGGESTION_DEBOUNCE_MS = 150;
 
-function clearSuggestions() {
-    suggestionsContainer.innerHTML = "";
-    suggestionsData = [];
-    activeIndex = -1;
-}
-
 function getSuggestionCacheKey(query) {
     return query.trim().toLowerCase();
 }

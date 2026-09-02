@@ -1,3 +1,6 @@
+@import "tailwindcss";
+/* preserve Tailwind v3 button-cursor behavior (v4 preflight parity) */
+button,[role="button"]{cursor:pointer}
 /* Global Styles */
 body {
     background-color: black;
