@@ -50,10 +50,16 @@ let activeIndex = -1;
 let currentEngine: EngineKey = 'web';
 let isProPlusActive = false;
 let isGeminiActive = false;
-const clientCache: Record<string, string[]> = {};
+// Bounded TTL-LRU: previous version was an unbounded Record = memory leak.
+const CLIENT_CACHE_MAX = 150;
+const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000;
+const clientCache = new Map<string, { value: string[]; expires: number }>();
 let controller: AbortController | null = null;
 let inputDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
-const SUGGESTION_DEBOUNCE_MS = 150;
+let requestSeq = 0; // monotonic id: drops stale out-of-order responses
+const SUGGESTION_DEBOUNCE_MS = 120;
+const SUGGESTION_DEBOUNCE_CACHED_PREFIX_MS = 60;
+const MIN_QUERY_LEN = 2;
 
 // ---------- Helpers ----------
 function isMobileDevice(): boolean {
@@ -70,7 +76,41 @@ function clearSuggestions(): void {
 }
 
 function getSuggestionCacheKey(query: string): string {
-  return query.trim().toLowerCase();
+  return query.trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 100);
+}
+
+function getCached(key: string): string[] | undefined {
+  const entry = clientCache.get(key);
+  if (!entry) return undefined;
+  if (Date.now() > entry.expires) {
+    clientCache.delete(key);
+    return undefined;
+  }
+  // Refresh recency.
+  clientCache.delete(key);
+  clientCache.set(key, entry);
+  return entry.value;
+}
+
+function setCached(key: string, value: string[]): void {
+  if (clientCache.has(key)) clientCache.delete(key);
+  else if (clientCache.size >= CLIENT_CACHE_MAX) {
+    const oldest = clientCache.keys().next().value as string | undefined;
+    if (oldest !== undefined) clientCache.delete(oldest);
+  }
+  clientCache.set(key, { value, expires: Date.now() + CLIENT_CACHE_TTL_MS });
+}
+
+/** Instant local filter: "hellow" reuses cached "hello" without network. */
+function prefixFiltered(query: string): string[] | undefined {
+  const q = query.toLowerCase();
+  for (let len = q.length - 1; len >= Math.max(MIN_QUERY_LEN, q.length - 8); len--) {
+    const entry = clientCache.get(q.slice(0, len));
+    if (!entry || Date.now() > entry.expires) continue;
+    const filtered = entry.value.filter((s) => s.toLowerCase().startsWith(q));
+    if (filtered.length) return filtered.slice(0, 8);
+  }
+  return undefined;
 }
 
 function areSuggestionsEqual(a: string[], b: string[]): boolean {
@@ -209,14 +249,14 @@ engineOptions.addEventListener('click', (e) => {
 // ---------- Suggestions ----------
 function fetchSuggestions(query: string): Promise<string[]> {
   const trimmedQuery = query.trim();
-  if (!trimmedQuery) {
+  if (!trimmedQuery || trimmedQuery.length < MIN_QUERY_LEN) {
     clearSuggestions();
     return Promise.resolve([]);
   }
 
   const cacheKey = getSuggestionCacheKey(trimmedQuery);
-  if (clientCache[cacheKey]) {
-    const cached = clientCache[cacheKey];
+  const cached = getCached(cacheKey);
+  if (cached) {
     if (!areSuggestionsEqual(suggestionsData, cached)) {
       suggestionsData = cached;
       activeIndex = -1;
@@ -227,20 +267,24 @@ function fetchSuggestions(query: string): Promise<string[]> {
 
   if (controller) controller.abort();
   controller = new AbortController();
+  const mySeq = ++requestSeq;
 
   return fetch(`/api/suggestions?q=${encodeURIComponent(trimmedQuery)}`, {
     signal: controller.signal,
     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    // Lets the browser serve the server's `max-age=120` without re-hitting.
+    cache: 'default',
   })
     .then((res) => res.json())
     .then((data: unknown) => {
+      if (mySeq !== requestSeq) return suggestionsData; // stale response
       if (searchInput.value.trim() !== trimmedQuery) return suggestionsData;
       if (!searchInput.value.trim()) {
         clearSuggestions();
         return [];
       }
       const next: string[] = Array.isArray(data) ? (data as string[]) : [];
-      clientCache[cacheKey] = next;
+      setCached(cacheKey, next);
       if (areSuggestionsEqual(suggestionsData, next)) return suggestionsData;
       suggestionsData = next;
       activeIndex = -1;
@@ -282,16 +326,34 @@ function handleInput(): void {
     clearTimeout(inputDebounceTimeout);
     inputDebounceTimeout = null;
   }
-  if (!query) {
+  if (!query || query.length < MIN_QUERY_LEN) {
     if (controller) controller.abort();
     clearSuggestions();
     return;
   }
   const cacheKey = getSuggestionCacheKey(query);
-  if (clientCache[cacheKey] && !areSuggestionsEqual(suggestionsData, clientCache[cacheKey])) {
-    suggestionsData = clientCache[cacheKey];
-    activeIndex = -1;
-    renderSuggestions();
+  const exact = getCached(cacheKey);
+  if (exact) {
+    // Exact hit: render instantly, skip the network entirely.
+    if (!areSuggestionsEqual(suggestionsData, exact)) {
+      suggestionsData = exact;
+      activeIndex = -1;
+      renderSuggestions();
+    }
+    return;
+  }
+  const prefixed = prefixFiltered(cacheKey);
+  if (prefixed) {
+    // SWR: show something instantly, revalidate fast in background.
+    if (!areSuggestionsEqual(suggestionsData, prefixed)) {
+      suggestionsData = prefixed;
+      activeIndex = -1;
+      renderSuggestions();
+    }
+    inputDebounceTimeout = setTimeout(() => {
+      void fetchSuggestions(query);
+    }, SUGGESTION_DEBOUNCE_CACHED_PREFIX_MS);
+    return;
   }
   inputDebounceTimeout = setTimeout(() => {
     void fetchSuggestions(query);
@@ -528,27 +590,6 @@ function updateToggleIndicators(): void {
   document.getElementById('gemini-indicator')?.style.setProperty('opacity', isGeminiActive ? '1' : '0');
 }
 
-function prefetchCommonSuggestions(): void {
-  for (const term of ['a', 'how', 'what', 'why', 'cricbuzz']) {
-    fetch(`/api/suggestions?q=${term}`)
-      .then((res) => res.json())
-      .then((data: unknown) => {
-        if (Array.isArray(data)) clientCache[getSuggestionCacheKey(term)] = data as string[];
-      })
-      .catch(() => {});
-  }
-}
-
-function whenIdle(fn: () => void): void {
-  if ('requestIdleCallback' in window) {
-    (window as unknown as { requestIdleCallback: (cb: () => void, opts?: object) => void }).requestIdleCallback(fn, {
-      timeout: 2000,
-    });
-  } else {
-    setTimeout(fn, 1000);
-  }
-}
-
 document.addEventListener('DOMContentLoaded', updateToggleIndicators);
 
 window.addEventListener('load', () => {
@@ -556,5 +597,7 @@ window.addEventListener('load', () => {
   searchInput.focus();
   updateEngineIcon();
   document.getElementById('gemini-search-btn')?.addEventListener('click', toggleGeminiMode);
-  whenIdle(prefetchCommonSuggestions);
+  // Old code fired 5 low-value prefetches (incl. single-char "a") on load.
+  // That slowed first paint for ~zero hit rate. Intentionally removed:
+  // per-keystroke prefix-filter + browser HTTP cache now covers repeats.
 });
