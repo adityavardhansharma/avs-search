@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+                            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+    
+    <!-- Main Homepage -->
+    <url>
+        <loc>https://avssearch.vercel.app/</loc>
+        <lastmod>2025-12-13</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+        <image:image>
+            <image:loc>https://avssearch.vercel.app/rocket.png</image:loc>
+            <image:title>AVS Search - Privacy-Focused Search Engine</image:title>
+            <image:caption>Logo for AVS Search, a Google alternative with no tracking</image:caption>
+        </image:image>
+    </url>
+    
+    <!-- About/Features Page (if you add these in the future) -->
+    <!-- Uncomment these when you add corresponding pages -->
+    <!--
+    <url>
+        <loc>https://avssearch.vercel.app/about</loc>
+        <lastmod>2025-12-13</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://avssearch.vercel.app/features</loc>
+        <lastmod>2025-12-13</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://avssearch.vercel.app/privacy</loc>
+        <lastmod>2025-12-13</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://avssearch.vercel.app/help</loc>
+        <lastmod>2025-12-13</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    -->
+    
+</urlset>
+
