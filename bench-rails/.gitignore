@@ -1,0 +1,8 @@
+/tmp/
+/log/
+/public/assets/
+.bundle/
+/storage/
+db/*.sqlite3*
+.byebug_history
+config/master.key
